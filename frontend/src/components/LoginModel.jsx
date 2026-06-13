@@ -3,16 +3,33 @@ import { motion } from "motion/react";
 import { Sparkles, X } from "lucide-react";
 import { signInWithPopup } from "firebase/auth";
 import { auth, provider } from "../../firebase";
+import axios from "axios";
+import { useDispatch } from "react-redux";
+import { setUserData } from "../redux/userSlice";
 
 const LoginModel = ({ open, onClose }) => {
-    const handleGoogleAuth = async() => {
-        try {
-            const result = await signInWithPopup(auth , provider)
-            console.log(result)
-        } catch (error) {
-            console.log(error)
-        }
+  const dispatch = useDispatch();
+  const handleGoogleAuth = async () => {
+    try {
+      const result = await signInWithPopup(auth, provider);
+
+      const payload = {
+        name: result.user.displayName,
+        email: result.user.email,
+        avatar: result.user.photoURL,
+      };
+
+      const { data } = await axios.post(
+        `${import.meta.env.VITE_SERVER_URL}/api/auth/google`,
+        payload,
+        { withCredentials: true },
+      );
+
+      dispatch(setUserData(data.user)); // FIX: backend returns {user}
+    } catch (error) {
+      console.log("Auth Error:", error.response?.data || error.message);
     }
+  };
   return (
     <div>
       {open && (
@@ -63,7 +80,7 @@ const LoginModel = ({ open, onClose }) => {
                   </span>
                 </h2>
                 <motion.button
-                onClick={handleGoogleAuth}
+                  onClick={handleGoogleAuth}
                   whileHover={{ scale: 1.04 }}
                   whileTap={{ scale: 0.96 }}
                   className="group relative w-full h-13 rounded-xl bg-white text-black font-semibold shadow-xl overflow-hidden"

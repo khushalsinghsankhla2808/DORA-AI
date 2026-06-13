@@ -1,20 +1,58 @@
-import express from 'express'
-import 'dotenv/config'
-import connectDB from './database/db.js'
-import authRoute from "./routes/authRoutes.js"
-import cookieParser from 'cookie-parser'
+import express from "express";
+import "dotenv/config";
+import cors from "cors";
+import cookieParser from "cookie-parser";
 
-const app = express()
-const PORT = process.env.PORT || 3000
+import connectDB from "./database/db.js";
+import authRoute from "./routes/authRoutes.js";
 
-// middleware
-app.use(express.json())
-app.use(cookieParser())
+const app = express();
+const PORT = process.env.PORT || 8000;
 
+// ======================================
+// FIX Firebase popup COOP warning
+// ======================================
+app.use((req, res, next) => {
+  res.setHeader(
+    "Cross-Origin-Opener-Policy",
+    "same-origin-allow-popups"
+  );
+  next();
+});
 
-app.use('/api/auth', authRoute)
+// ======================================
+// Middleware
+// ======================================
+app.use(express.json());
 
-app.listen(PORT,()=>{
-    connectDB()
-    console.log(`Server is listening at port:${PORT}`);
-})  
+app.use(cookieParser());
+
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
+);
+
+// ======================================
+// Routes
+// ======================================
+app.use("/api/auth", authRoute);
+
+// ======================================
+// Start server
+// ======================================
+const startServer = async () => {
+  try {
+    await connectDB();
+
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+startServer();
